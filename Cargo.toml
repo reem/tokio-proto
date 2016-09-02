@@ -23,12 +23,12 @@ exclude       = [
 
 [dependencies]
 bytes = { git = "https://github.com/carllerche/bytes" }
-futures = { git = "https://github.com/alexcrichton/futures-rs" }
+futures = { git = "https://github.com/alexcrichton/futures-rs", branch = "new-poll" }
 log = "0.3.6"
 slab = "0.3"
 take = "0.1.0"
-tokio-core = { git = "https://github.com/tokio-rs/tokio-core" }
-tokio-service = { git = "https://github.com/tokio-rs/tokio-service" }
+tokio-core = { git = "https://github.com/tokio-rs/tokio-core", branch = "new-poll" }
+tokio-service = { git = "https://github.com/tokio-rs/tokio-service", branch = "new-poll" }
 
 [dev-dependencies]
 env_logger = "0.3.0"
