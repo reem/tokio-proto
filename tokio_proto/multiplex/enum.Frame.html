@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Frame` enum in crate `tokio_proto`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Frame">
+
+    <title>tokio_proto::multiplex::Frame - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>tokio_proto</a>::<wbr><a href='index.html'>multiplex</a></p><script>window.sidebarCurrent = {name: 'Frame', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../index.html'>tokio_proto</a>::<wbr><a href='index.html'>multiplex</a>::<wbr><a class='enum' href=''>Frame</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-322' class='srclink' href='../../src/tokio_proto/src/multiplex/mod.rs.html#50-65' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum Frame&lt;T,&nbsp;B,&nbsp;E&gt; {
+    Message(<a class='type' href='../../tokio_proto/multiplex/type.RequestId.html' title='tokio_proto::multiplex::RequestId'>RequestId</a>,&nbsp;T),
+    MessageWithBody(<a class='type' href='../../tokio_proto/multiplex/type.RequestId.html' title='tokio_proto::multiplex::RequestId'>RequestId</a>,&nbsp;T,&nbsp;Sender&lt;B,&nbsp;E&gt;),
+    Body(<a class='type' href='../../tokio_proto/multiplex/type.RequestId.html' title='tokio_proto::multiplex::RequestId'>RequestId</a>,&nbsp;<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;B&gt;),
+    Error(<a class='type' href='../../tokio_proto/multiplex/type.RequestId.html' title='tokio_proto::multiplex::RequestId'>RequestId</a>,&nbsp;E),
+    Done,
+}</pre><div class='docblock'><p>A multiplexed protocol frame</p>
+</div><h2 class='variants'>Variants</h2>
+<span id='variant.Message' class='variant'><code>Message(<a class='type' href='../../tokio_proto/multiplex/type.RequestId.html' title='tokio_proto::multiplex::RequestId'>RequestId</a>,&nbsp;T)</code></span><div class='docblock'><p>Either a request or a response</p>
+</div><span id='variant.MessageWithBody' class='variant'><code>MessageWithBody(<a class='type' href='../../tokio_proto/multiplex/type.RequestId.html' title='tokio_proto::multiplex::RequestId'>RequestId</a>,&nbsp;T,&nbsp;Sender&lt;B,&nbsp;E&gt;)</code></span><div class='docblock'><p>Returned by <code>Transport::read</code> when a streaming body will follow.
+Subsequent body frames with a matching <code>RequestId</code> will be proxied to
+the provided <code>Sender</code>.</p>
+
+<p>Calling <code>Transport::write</code> with Frame::MessageWithBody is an error.</p>
+</div><span id='variant.Body' class='variant'><code>Body(<a class='type' href='../../tokio_proto/multiplex/type.RequestId.html' title='tokio_proto::multiplex::RequestId'>RequestId</a>,&nbsp;<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;B&gt;)</code></span><div class='docblock'><p>Body frame. None indicates that the body is done streaming.</p>
+</div><span id='variant.Error' class='variant'><code>Error(<a class='type' href='../../tokio_proto/multiplex/type.RequestId.html' title='tokio_proto::multiplex::RequestId'>RequestId</a>,&nbsp;E)</code></span><div class='docblock'><p>Error</p>
+</div><span id='variant.Done' class='variant'><code>Done</code></span><div class='docblock'><p>Final frame sent in each transport direction</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;T,&nbsp;B,&nbsp;E&gt; <a class='enum' href='../../tokio_proto/multiplex/enum.Frame.html' title='tokio_proto::multiplex::Frame'>Frame</a>&lt;T,&nbsp;B,&nbsp;E&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-390' class='srclink' href='../../src/tokio_proto/src/multiplex/mod.rs.html#184-236' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.request_id' class='method'><code>fn <a href='#method.request_id' class='fnname'>request_id</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='type' href='../../tokio_proto/multiplex/type.RequestId.html' title='tokio_proto::multiplex::RequestId'>RequestId</a>&gt;</code></h4>
+<div class='docblock'><p>Return the request ID associated with the frame.</p>
+</div><h4 id='method.unwrap_msg' class='method'><code>fn <a href='#method.unwrap_msg' class='fnname'>unwrap_msg</a>(self) -&gt; T</code></h4>
+<div class='docblock'><p>Unwraps a frame, yielding the content of the <code>Message</code>.</p>
+</div><h4 id='method.unwrap_body' class='method'><code>fn <a href='#method.unwrap_body' class='fnname'>unwrap_body</a>(self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;B&gt;</code></h4>
+<div class='docblock'><p>Unwraps a frame, yielding the content of the <code>Body</code>.</p>
+</div><h4 id='method.unwrap_err' class='method'><code>fn <a href='#method.unwrap_err' class='fnname'>unwrap_err</a>(self) -&gt; E</code></h4>
+<div class='docblock'><p>Unwraps a frame, yielding the content of the <code>Error</code>.</p>
+</div><h4 id='method.is_done' class='method'><code>fn <a href='#method.is_done' class='fnname'>is_done</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Returns true if the frame is <code>Frame::Done</code></p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;T,&nbsp;B,&nbsp;E&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='enum' href='../../tokio_proto/multiplex/enum.Frame.html' title='tokio_proto::multiplex::Frame'>Frame</a>&lt;T,&nbsp;B,&nbsp;E&gt; <span class='where'>where T: <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a>, E: <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a>, B: <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-423' class='srclink' href='../../src/tokio_proto/src/multiplex/mod.rs.html#238-252' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, fmt: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "tokio_proto";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>
