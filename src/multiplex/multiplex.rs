@@ -1,8 +1,9 @@
 use super::{Frame, Message, Error, RequestId, Transport};
 use super::frame_buf::{FrameBuf, FrameDeque};
 use futures::{Future, Poll, Async};
-use futures::stream::{Stream};
+use futures::stream::{Stream, Sender, FutureSender};
 use std::io;
+use std::collections::HashMap;
 
 /*
  * TODO:
@@ -28,10 +29,10 @@ pub struct Multiplex<S, T>
     run: bool,
     // The transport wrapping the connection.
     transport: T,
-    // The `Sender` for the in-flight request body streams
-    // out_bodies: HashMap<RequestId, BodySender<T::BodyOut, S::Error>>,
+    // The `Sender`s for the in-flight request body streams
+    out_bodies: HashMap<RequestId, BodySender<T::BodyOut, S::Error>>,
     // The in-flight response body streams
-    // in_bodies: HashMap<RequestId, S::InBodyStream>,
+    in_bodies: HashMap<RequestId, S::InBodyStream>,
     // True when the transport is fully flushed
     is_flushed: bool,
     // Glues the service with the pipeline task
@@ -72,12 +73,11 @@ pub trait Dispatch {
     fn has_in_flight(&self) -> bool;
 }
 
-/*
+
 enum BodySender<B, E> {
     Ready(Sender<B, E>),
     Busy(FutureSender<B, E>, FrameDeque<Option<B>>),
 }
-*/
 
 /*
  *
@@ -98,8 +98,8 @@ impl<S, T, E> Multiplex<S, T>
         Ok(Multiplex {
             run: true,
             transport: transport,
-            // out_bodies: HashMap::new(),
-            // in_bodies: HashMap::new(),
+            out_bodies: HashMap::new(),
+            in_bodies: HashMap::new(),
             is_flushed: true,
             dispatch: dispatch,
             dispatch_deque: frame_buf.deque(),
@@ -132,12 +132,7 @@ impl<S, T, E> Multiplex<S, T>
     fn flush_dispatch_deque(&mut self) -> io::Result<()> {
         while self.dispatch.is_ready() {
             match self.dispatch_deque.pop() {
-                Some(Frame::Message(request_id, msg)) => {
-                    if let Err(_) = self.dispatch.dispatch(request_id, msg) {
-                        unimplemented!();
-                    }
-                }
-                Some(_) => unimplemented!(),
+                Some(fr) => try!(self.dispatch_ready_frame(fr)),
                 None => return Ok(()),
             }
         }
@@ -166,28 +161,43 @@ impl<S, T, E> Multiplex<S, T>
 
     fn process_out_frame(&mut self, frame: Frame<T::Out, T::BodyOut, E>) -> io::Result<()> {
         trace!("Multiplex::process_out_frame");
+
+        if self.dispatch.is_ready() {
+            trace!("dispatch ready, dispatching");
+
+            // Only should be here if there are no queued messages
+            assert!(self.dispatch_deque.is_empty());
+
+            try!(self.dispatch_ready_frame(frame));
+        } else {
+            trace!("dispatch not ready");
+            try!(self.dispatch_deque.push(frame));
+        }
+
+        Ok(())
+    }
+
+    fn dispatch_ready_frame(&mut self, frame: Frame<T::Out, T::BodyOut, E>) -> io::Result<()> {
+        trace!("Multiplex::dispatch_ready_frame");
         match frame {
             Frame::Message(id, out_message) => {
-                trace!("   --> read out message; id={:?}", id);
+                trace!("read out message; id={:?}", id);
 
-                if self.dispatch.is_ready() {
-                    trace!("   --> dispatch ready -- dispatching");
-
-                    // Only should be here if there are no queued messages
-                    assert!(self.dispatch_deque.is_empty());
-
-                    if let Err(_) = self.dispatch.dispatch(id, out_message) {
-                        // TODO: Should dispatch be infalliable
-                        unimplemented!();
-                    }
-                } else {
-                    trace!("   --> dispatch not ready");
-                    // Queue the dispatch buffer
-                    self.dispatch_deque.push(Frame::Message(id, out_message));
+                if let Err(_) = self.dispatch.dispatch(id, out_message) {
+                    // TODO: Should dispatch be infalliable
+                    unimplemented!();
                 }
             }
-            Frame::MessageWithBody(_id, _out_message, _body_sender) => {
-                unimplemented!();
+            Frame::MessageWithBody(id, out_message, body_sender) => {
+                trace!("read out message with body, id={:?}", id);
+
+                // Track the out body sender for this request.
+                self.out_bodies.insert(id, BodySender::Ready(body_sender));
+
+                if let Err(_) = self.dispatch.dispatch(id, out_message) {
+                    // TODO: Should dispatch be infallible
+                    unimplemented!();
+                }
             }
             Frame::Body(_id, Some(_chunk)) => {
                 unimplemented!();
@@ -225,11 +235,15 @@ impl<S, T, E> Multiplex<S, T>
     fn write_in_message(&mut self, id: RequestId, message: Result<Message<S::InMsg, S::InBodyStream>, S::Error>) -> io::Result<()> {
         match message {
             Ok(Message::WithoutBody(val)) => {
-                trace!("got in_flight value with body");
+                trace!("got in_flight value without body");
                 try!(self.transport.write(Frame::Message(id, val)));
             }
-            Ok(Message::WithBody(_val, _body)) => {
-                unimplemented!();
+            Ok(Message::WithBody(val, body)) => {
+                trace!("got in_flight value with body");
+                try!(self.transport.write(Frame::Message(id, val)));
+
+                trace!("registering in_body for id: {:?}", id);
+                self.in_bodies.insert(id, body);
             }
             Err(e) => {
                 trace!("got in_flight error");
